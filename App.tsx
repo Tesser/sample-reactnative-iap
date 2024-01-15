@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { PropsWithChildren } from 'react';
 import {
     SafeAreaView,
@@ -17,6 +17,18 @@ import {
     View,
     Button,
 } from 'react-native';
+import {
+    withIAPContext,
+    initConnection,
+    endConnection,
+    getProducts,
+    getAvailablePurchases,
+    requestPurchase,
+    purchaseUpdatedListener,
+    Purchase,
+    purchaseErrorListener,
+    PurchaseError,
+} from 'react-native-iap';
 
 import {
     Colors,
@@ -27,14 +39,39 @@ type SectionProps = PropsWithChildren<{
     title: string;
 }>;
 
-const purchaseHandler = () => {
-    console.log("purchase!!")
+const purchaseHandler = async () => {
+    const updateSub = purchaseUpdatedListener((purchase: Purchase) => {
+        console.log("**************************** event");
+        console.log(purchase);
+    });
+    const failSub = purchaseErrorListener((error: PurchaseError) => {
+        console.log("**************************** event");
+        console.log(error);
+    });
+    try {
+        const products = await getProducts({ skus: ["test_item_20240112"] });
+        const sku = products[0]["productId"];
+
+        const purchases = await requestPurchase({ skus: [sku] });
+        console.log("purchase: ", purchases[0]);
+
+
+    } catch (error) {
+        console.error(error);
+    }
+    console.log("purchased!!")
 }
-const checkHandler = () => {
-    console.log("check!!")
+const checkHandler = async () => {
+    try {
+        const purchases = await getAvailablePurchases();
+        console.log("purchases: ", purchases);
+    } catch (error) {
+        console.error(error)
+    }
 }
 const consumeHandler = () => {
     console.log("consume!!")
+    consumeHandler();
 }
 
 
@@ -65,8 +102,18 @@ function Section({ children, title }: SectionProps): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
-    const isDarkMode = useColorScheme() === 'dark';
 
+    useEffect(() => {
+        const initialize = async () => {
+            await initConnection();
+        }
+        initialize();
+        return () => {
+            endConnection();
+        }
+    }, []);
+
+    const isDarkMode = useColorScheme() === 'dark';
     const backgroundStyle = {
         backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
     };
@@ -126,4 +173,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default App;
+export default withIAPContext(App);
