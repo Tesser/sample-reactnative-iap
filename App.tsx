@@ -34,20 +34,23 @@ import {
     Colors,
     Header,
 } from 'react-native/Libraries/NewAppScreen';
+import { getCharacters } from './request/request.iap';
 
 type SectionProps = PropsWithChildren<{
     title: string;
 }>;
 
+function deepEqual(x: any, y: any): boolean {
+  const ok = Object.keys, tx = typeof x, ty = typeof y;
+  return x && y && tx === 'object' && tx === ty ? (
+    ok(x).length === ok(y).length &&
+      ok(x).every(key => deepEqual(x[key], y[key]))
+  ) : (x === y);
+}
+
 const purchaseHandler = async () => {
-    const updateSub = purchaseUpdatedListener((purchase: Purchase) => {
-        console.log("**************************** event");
-        console.log(purchase);
-    });
-    const failSub = purchaseErrorListener((error: PurchaseError) => {
-        console.log("**************************** event");
-        console.log(error);
-    });
+
+
     try {
         const products = await getProducts({ skus: ["test_item_20240112"] });
         const sku = products[0]["productId"];
@@ -62,6 +65,9 @@ const purchaseHandler = async () => {
     console.log("purchased!!")
 }
 const checkHandler = async () => {
+    const res = await getCharacters('voided', 'test', 'test');
+    console.log("voided: ", res);
+
     try {
         const purchases = await getAvailablePurchases();
         console.log("purchases: ", purchases);
@@ -106,10 +112,37 @@ function App(): React.JSX.Element {
     useEffect(() => {
         const initialize = async () => {
             await initConnection();
+            let prevPurchase: Purchase;
+            const updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
+                await new Promise(f => setTimeout(f, 0));
+                if (
+                    JSON.stringify(purchase) !== JSON.stringify(prevPurchase)
+                ) {
+                    prevPurchase = purchase;
+                    console.log("**************************** event update");
+                    console.log(purchase);
+                    try {
+                        if (purchase.purchaseToken == null) throw new Error('No token error');
+                        const res = await getCharacters(
+                            'consume',
+                            purchase.productId,
+                            purchase.purchaseToken,
+                        );
+                        console.log(res);
+                    } catch( error) {
+                        console.error(error);
+                    }
+                }
+            });
+            const failSub = purchaseErrorListener((error: PurchaseError) => {
+                console.log("**************************** event fail");
+                console.log(error);
+            });
         }
         initialize();
         return () => {
             endConnection();
+            console.log('end connection!!!!!!!!!!!!!!!!!!!!!!');
         }
     }, []);
 
@@ -140,11 +173,11 @@ function App(): React.JSX.Element {
                         <Button onPress={purchaseHandler} title="purchase">
                         </Button>
                     </Section>
-                    <Section>
+                    <Section title="Test">
                         <Button onPress={checkHandler} title="Check">
                         </Button>
                     </Section>
-                    <Section>
+                    <Section title="Consume">
                         <Button onPress={consumeHandler} title="Consume">
                         </Button>
                     </Section>
