@@ -16,14 +16,12 @@ import {
     useColorScheme,
     View,
     Button,
+    EmitterSubscription,
 } from 'react-native';
 import {
     withIAPContext,
     initConnection,
     endConnection,
-    getProducts,
-    getAvailablePurchases,
-    requestPurchase,
     purchaseUpdatedListener,
     Purchase,
     purchaseErrorListener,
@@ -35,50 +33,11 @@ import {
     Header,
 } from 'react-native/Libraries/NewAppScreen';
 import { getCharacters } from './request/request.iap';
+import { checkHandler, consumeHandler, purchaseHandler } from './handler/purchase.hander';
 
 type SectionProps = PropsWithChildren<{
     title: string;
 }>;
-
-function deepEqual(x: any, y: any): boolean {
-  const ok = Object.keys, tx = typeof x, ty = typeof y;
-  return x && y && tx === 'object' && tx === ty ? (
-    ok(x).length === ok(y).length &&
-      ok(x).every(key => deepEqual(x[key], y[key]))
-  ) : (x === y);
-}
-
-const purchaseHandler = async () => {
-
-
-    try {
-        const products = await getProducts({ skus: ["test_item_20240112"] });
-        const sku = products[0]["productId"];
-
-        const purchases = await requestPurchase({ skus: [sku] });
-        console.log("purchase: ", purchases[0]);
-
-
-    } catch (error) {
-        console.error(error);
-    }
-    console.log("purchased!!")
-}
-const checkHandler = async () => {
-    const res = await getCharacters('voided', 'test', 'test');
-    console.log("voided: ", res);
-
-    try {
-        const purchases = await getAvailablePurchases();
-        console.log("purchases: ", purchases);
-    } catch (error) {
-        console.error(error)
-    }
-}
-const consumeHandler = () => {
-    console.log("consume!!")
-    consumeHandler();
-}
 
 
 function Section({ children, title }: SectionProps): React.JSX.Element {
@@ -110,37 +69,49 @@ function Section({ children, title }: SectionProps): React.JSX.Element {
 function App(): React.JSX.Element {
 
     useEffect(() => {
-        const initialize = async () => {
+
+        let updateSub: EmitterSubscription | null = null;
+        let failedSub: EmitterSubscription | null = null;
+        const initializeSub = async () => {
             await initConnection();
-            let prevPurchase: Purchase;
-            const updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
-                await new Promise(f => setTimeout(f, 0));
-                if (
-                    JSON.stringify(purchase) !== JSON.stringify(prevPurchase)
-                ) {
-                    prevPurchase = purchase;
-                    console.log("**************************** event update");
-                    console.log(purchase);
-                    try {
-                        if (purchase.purchaseToken == null) throw new Error('No token error');
-                        const res = await getCharacters(
-                            'consume',
-                            purchase.productId,
-                            purchase.purchaseToken,
-                        );
-                        console.log(res);
-                    } catch( error) {
-                        console.error(error);
-                    }
+
+            let lastReceipt = null;
+            updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
+                if (lastReceipt === purchase.transactionReceipt) return;
+                lastReceipt = purchase.transactionReceipt;
+
+                console.log("**************************** event update");
+                console.log(purchase);
+                try {
+                    if (purchase.purchaseToken == null) throw new Error('No token error');
+                    const res = await getCharacters(
+                        'consume',
+                        purchase.productId,
+                        purchase.purchaseToken,
+                    );
+                    console.log(res);
+                } catch( error) {
+                    console.error(error);
                 }
             });
-            const failSub = purchaseErrorListener((error: PurchaseError) => {
+
+            let lastErrorCode = null;
+            failedSub = purchaseErrorListener((error: PurchaseError) => {
+                if (lastErrorCode === error.code) return;
+
+                lastErrorCode = error.code
                 console.log("**************************** event fail");
                 console.log(error);
             });
+
         }
-        initialize();
+        initializeSub();
         return () => {
+            updateSub.remove();
+            failedSub.remove();
+            updateSub = null;
+            failedSub = null;
+
             endConnection();
             console.log('end connection!!!!!!!!!!!!!!!!!!!!!!');
         }
@@ -150,7 +121,6 @@ function App(): React.JSX.Element {
     const backgroundStyle = {
         backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
     };
-
     return (
         <SafeAreaView style={backgroundStyle}>
             <StatusBar
@@ -170,15 +140,15 @@ function App(): React.JSX.Element {
                         screen and then come back to see your edits.
                     </Section>
                     <Section title="Purchase">
-                        <Button onPress={purchaseHandler} title="purchase">
+                        <Button onPress={purchaseHandler} title="Purchase">
                         </Button>
                     </Section>
                     <Section title="Test">
-                        <Button onPress={checkHandler} title="Check">
+                        <Button onPress={checkHandler} title="Check" key="check_btn">
                         </Button>
                     </Section>
                     <Section title="Consume">
-                        <Button onPress={consumeHandler} title="Consume">
+                        <Button onPress={consumeHandler} title="Consume" key="consume_btn">
                         </Button>
                     </Section>
                 </View>
