@@ -24,3 +24,5 @@ export async function getCharacters(
     })
     return await results.json();
 }
+
+

@@ -34,10 +34,10 @@ export const checkHandler = async () => {
     console.log("check");
     try {
         const res = await getCharacters('voided', 'test', 'test');
+        console.log("voided: ", res);
     } catch (error) {
         console.error(error);
     }
-    console.log("voided: ", res);
 
     try {
         const purchases = await getAvailablePurchases();
@@ -49,5 +49,4 @@ export const checkHandler = async () => {
 
 export const consumeHandler = () => {
     console.log("consume!!")
-    consumeHandler();
 }
