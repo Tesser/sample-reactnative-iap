@@ -1,9 +1,11 @@
+
 export async function getCharacters(
     queryType: 'get' | 'ack' | 'consume' | 'list' | 'voided',
     productId: string,
     token: string,
 ) {
-    let results = await fetch('http://192.168.10.90:4000/graphql', {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    const results = await fetch('http://192.168.10.90:4000/graphql', {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",

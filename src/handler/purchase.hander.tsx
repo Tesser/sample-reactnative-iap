@@ -21,13 +21,18 @@ export const purchaseHandler = async () => {
             purchases = await requestPurchase({ sku: skus[0] } as RequestPurchaseIOS);
             throw new Error('Not impl for ios yet error');
         }
-        console.log("purchase: ", purchases);
+        const purchase = purchases[0];
+        console.log( "purchase: ");
 
-
+        await getCharacters(
+            "get",
+            purchase.productIds[0],
+            purchase.purchaseToken
+        );
     } catch (error) {
         console.error(error);
     }
-    console.log("purchase completed!!")
+    console.log("user purchase process done!!")
 }
 
 export const checkHandler = async () => {

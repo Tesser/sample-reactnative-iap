@@ -26,6 +26,7 @@ import {
     Purchase,
     purchaseErrorListener,
     PurchaseError,
+    useIAP,
 } from 'react-native-iap';
 
 import {
@@ -34,9 +35,7 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 import { getCharacters } from './request/request.iap';
 import { checkHandler, consumeHandler, purchaseHandler } from './handler/purchase.hander';
-import { ApolloProvider } from '@apollo/client';
 import GetCharacters2 from './request/request.gql';
-import { gqlClient } from './gql-client/client';
 
 type SectionProps = PropsWithChildren<{
     title: string;
@@ -127,43 +126,37 @@ function App(): React.JSX.Element {
     };
 
     return (
-        <ApolloProvider client={gqlClient}>
-            <SafeAreaView style={backgroundStyle}>
-                <StatusBar
-                    barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                    backgroundColor={backgroundStyle.backgroundColor}
-                />
-                <ScrollView
-                    contentInsetAdjustmentBehavior="automatic"
-                    style={backgroundStyle}>
-                    <Header />
-                    <View
-                        style={{
-                            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-                        }}>
-                        <Section title="Purpose">
-                            This is for test <Text style={styles.highlight}>IAP</Text>.
-                        </Section>
-                        <Section title="Purchase">
-                            <Button onPress={purchaseHandler} title="Purchase">
-                            </Button>
-                        </Section>
-                        <Section title="Test">
-                            <Button onPress={checkHandler} title="Check" key="check_btn">
-                            </Button>
-                        </Section>
-                        <Section title="Consume">
-                            <Button onPress={consumeHandler} title="Consume" key="consume_btn">
-                            </Button>
-                        </Section>
-                        <Section title="Sample">
-                            <GetCharacters2>
-                            </GetCharacters2>
-                        </Section>
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
-            </ApolloProvider>
+        <SafeAreaView style={backgroundStyle}>
+            <StatusBar
+                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+                backgroundColor={backgroundStyle.backgroundColor}
+            />
+            <ScrollView
+                contentInsetAdjustmentBehavior="automatic"
+                style={backgroundStyle}>
+                <Header />
+                <View
+                    style={{
+                        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                    }}>
+                    <Section title="Purpose">
+                        This is for test <Text style={styles.highlight}>IAP</Text>.
+                    </Section>
+                    <Section title="Purchase">
+                        <Button onPress={purchaseHandler} title="Purchase">
+                        </Button>
+                    </Section>
+                    <Section title="Test">
+                        <Button onPress={checkHandler} title="Check" key="check_btn">
+                        </Button>
+                    </Section>
+                    <Section title="Consume">
+                        <Button onPress={consumeHandler} title="Consume" key="consume_btn">
+                        </Button>
+                    </Section>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 

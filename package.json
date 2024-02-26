@@ -14,7 +14,8 @@
     "graphql": "^16.8.1",
     "react": "18.2.0",
     "react-native": "0.73.2",
-    "react-native-iap": "^12.12.1"
+    "react-native-iap": "^12.12.1",
+    "undici": "^6.6.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
